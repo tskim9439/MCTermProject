@@ -114,7 +114,7 @@ Yoochoose 데이터에는 별도의 key가 없으므로 해당 내용들을 직�
 이를 해결하기 위해 ['datasets/preprocess.py']('./datasets/preprocess.py') 파일 수정이 필요합니다.
 Yoochoose 데이터에 대한 수정은 아래와 같이 진행합니다.
 
-31 번 줄에 아래의 코드를 추가하여 각 key를 직접 입력합니다.
+31 번 줄을 아래 코드처럼 변경합니다.
 
 ``` python
 reader = csv.DictReader(f, delimiter=',')
