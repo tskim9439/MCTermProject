@@ -101,13 +101,7 @@ doi = {10.1609/aaai.v33i01.3301346},
 editor = {Pascal Van Hentenryck and Zhi-Hua Zhou},
 }
 ```
-
-## 실행 후 분석
-기존 Sample 데이터로 학습을 진행 시, MRR 등 평가 수치가 1.x, 4.x 등으로 매우 낮은 값을 나타냅니다.
-이는 논문에서 나온 수치와 다르게 매우 안 좋은 값이어서
-논문에 나온 수치를 보기 위해선 Yoochoose 나 diginetica 데이터를 통해 실험을 진행해야 할 것입니다.
-
-## Preprocess Error 해결 방법
+## Yoochoose 데이터 사용 간 Preprocess Error 발생 시 해결 방법
 Yoochoose 데이터를 다운로드 후 실행하면 Preprocess.py 과정에서 에러가 발생합니다.
 Yoochoose 데이터에는 별도의 key가 없으므로 해당 내용들을 직접 입력해줘야 합니다.
 
