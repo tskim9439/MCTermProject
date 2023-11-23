@@ -48,9 +48,7 @@ def save_sequences_to_csv(sequences, file_path):
             csv_writer.writerow(ap_names_row)
             csv_writer.writerow(ap_times_row)
 
-# Main processing loop for large CSV file
-# csv_file = r'datasets\2014_01_oneday.csv'
-# output_file_path = r'datasets\2014_01_oneday_preprocess_with_time.csv'
+# Main processing loop for CSV file
 csv_file = r'datasets\2014_01.csv'
 output_file_path = r'datasets\2014_01_preprocess_with_time.csv'
 for file in glob.glob(csv_file):
