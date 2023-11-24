@@ -1,4 +1,4 @@
-dataset : "diginetica"
+dataset : "KTHCampus"
 batchSize : 100
 hiddenSize : 256
 epoch : 30
