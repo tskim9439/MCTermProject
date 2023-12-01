@@ -3,6 +3,7 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
 
 def get_sequences_from_csv(csv_file_path):
     sequences = []
@@ -29,7 +30,7 @@ def struct_dataset(sequences):
     return data
 
 
-def filter_dataset(sequences, target_len=6):
+def filter_dataset(sequences, target_len=10):
     data = []
     for line in sequences:
         if len(line) >= target_len:
@@ -55,11 +56,6 @@ def data_masks(all_usr_pois, item_tail):
 
 
 class KTHDataset(Dataset):
-    """
-    Diginetica Dataset
-    Args :
-        data : tuple of (seqs of inputs [List[List]], labels [List])
-    """
     def __init__(self, csv_file, graph=None):
         data = get_sequences_from_csv(csv_file)
         data = struct_dataset(data)
@@ -143,9 +139,14 @@ def collate_fn(batch):
     
     return alias_inputs, A, items, mask, targets, inputs
 
+def set_seed(seed_value=42):
+    np.random.seed(seed_value)
+    torch.manual_seed(seed_value)
+    torch.cuda.manual_seed_all(seed_value)
+
+set_seed()  # Setting the seed for reproducibility
 
 if __name__ == "__main__":
-    from torch.utils.data import DataLoader
     csv_file = r'datasets\2014_01_preprocess_with_time.csv'
     dataset = KTHDataset(csv_file)
     loader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=collate_fn)
