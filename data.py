@@ -138,12 +138,27 @@ def collate_fn(batch):
     
     return alias_inputs, A, items, mask, targets, inputs
 
-def set_seed(seed_value=42):
+#시드 값 조정을 통해 다른 환경에서도 동일하게 shuffle된 데이터 사용
+def set_seed(seed_value=100):
     np.random.seed(seed_value)
     torch.manual_seed(seed_value)
     torch.cuda.manual_seed_all(seed_value)
 
-set_seed()  # Setting the seed for reproducibility
+
+def filter_valid_sequences(train_dataset, validation_dataset):
+    # Train 데이터셋에서 모든 고유 AP 목록 생성
+    train_aps = set()
+    for data in train_dataset:
+        train_aps.update(set(data))
+
+    # valid 데이터셋 필터링 (train에 없는 ap 값이 있으면 해당 시퀀스는 검증에서 제외)
+    filtered_valid_dataset = []
+    for data in validation_dataset:
+        if all(ap in train_aps for ap in data):
+            filtered_valid_dataset.append(data)
+
+    return filtered_valid_dataset
+
 
 if __name__ == "__main__":
     # Setting the seed
@@ -159,16 +174,18 @@ if __name__ == "__main__":
 
     train_dataset, validation_dataset = random_split(dataset, [train_size, validation_size])
 
+    filtered_test_dataset = filter_valid_sequences(train_dataset, validation_dataset)
+
     # DataLoaders for train and validation sets with shuffling
     train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True, collate_fn=collate_fn)
     validation_loader = DataLoader(validation_dataset, batch_size=4, shuffle=True, collate_fn=collate_fn)
 
-    # Example of iterating over the train_loader
-    for alias_inputs, A, items, mask, targets, inputs in train_loader:
-        print(alias_inputs)
-        print(A)
-        print(items)
-        print(mask)
-        print(targets)
-        print(inputs)
-        break
+    # # Example of iterating over the train_loader
+    # for alias_inputs, A, items, mask, targets, inputs in train_loader:
+    #     print(alias_inputs)
+    #     print(A)
+    #     print(items)
+    #     print(mask)
+    #     print(targets)
+    #     print(inputs)
+    #     break
