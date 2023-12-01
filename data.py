@@ -2,8 +2,7 @@ import csv
 import random
 import numpy as np
 import torch
-from torch.utils.data import Dataset
-from torch.utils.data import DataLoader
+from torch.utils.data import Dataset, DataLoader, random_split
 
 def get_sequences_from_csv(csv_file_path):
     sequences = []
@@ -59,7 +58,7 @@ class KTHDataset(Dataset):
     def __init__(self, csv_file, graph=None):
         data = get_sequences_from_csv(csv_file)
         data = struct_dataset(data)
-        data = filter_dataset(data, target_len=10)
+        data = filter_dataset(data, target_len=10)          #시퀀스 길이 10으로 고정
         self.nodes = get_total_nodes(data)
         self.nodes2idx = {node: idx for idx, node in enumerate(self.nodes)}
         self.get_session_target(data)
@@ -147,10 +146,25 @@ def set_seed(seed_value=42):
 set_seed()  # Setting the seed for reproducibility
 
 if __name__ == "__main__":
-    csv_file = r'datasets\2014_01_preprocess_with_time.csv'
+    # Setting the seed
+    set_seed()
+
+    csv_file = r'datasets\\2014_01_preprocess_with_time.csv'
     dataset = KTHDataset(csv_file)
-    loader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=collate_fn)
-    for alias_inputs, A, items, mask, targets, inputs in loader:
+
+    # Splitting the dataset into train and validation sets
+    total_size = len(dataset)
+    train_size = int(0.8 * total_size)
+    validation_size = total_size - train_size
+
+    train_dataset, validation_dataset = random_split(dataset, [train_size, validation_size])
+
+    # DataLoaders for train and validation sets with shuffling
+    train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True, collate_fn=collate_fn)
+    validation_loader = DataLoader(validation_dataset, batch_size=4, shuffle=True, collate_fn=collate_fn)
+
+    # Example of iterating over the train_loader
+    for alias_inputs, A, items, mask, targets, inputs in train_loader:
         print(alias_inputs)
         print(A)
         print(items)
