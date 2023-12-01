@@ -59,7 +59,7 @@ class KTHDataset(Dataset):
     def __init__(self, csv_file, graph=None):
         data = get_sequences_from_csv(csv_file)
         data = struct_dataset(data)
-        data = filter_dataset(data, target_len=6)
+        data = filter_dataset(data, target_len=10)
         self.nodes = get_total_nodes(data)
         self.nodes2idx = {node: idx for idx, node in enumerate(self.nodes)}
         self.get_session_target(data)
