@@ -179,13 +179,3 @@ if __name__ == "__main__":
     # DataLoaders for train and validation sets with shuffling
     train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True, collate_fn=collate_fn)
     validation_loader = DataLoader(validation_dataset, batch_size=4, shuffle=True, collate_fn=collate_fn)
-
-    # # Example of iterating over the train_loader
-    # for alias_inputs, A, items, mask, targets, inputs in train_loader:
-    #     print(alias_inputs)
-    #     print(A)
-    #     print(items)
-    #     print(mask)
-    #     print(targets)
-    #     print(inputs)
-    #     break
