@@ -6,24 +6,32 @@ from omegaconf import OmegaConf
 from tqdm import tqdm
 
 from utils import Data, split_validation
-from kth_dataset import KTHDataset, collate_fn
+from data import KTHDataset, collate_fn
 from model import SessionGraph
 
 cfg_fp = "config.yaml"
 cfg = OmegaConf.load(cfg_fp)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+seq_len = 6
 csv_file = r'/home/gtts/MCTermProject/datasets/2014_01_preprocess_with_time.csv'
 
-#%%
-"""
-if cfg.dataset == 'diginetica':
-    n_node = 43098 # number of items
-else:
-    NotImplementedError(f"Dataset {cfg.dataset} not implemented")
-"""
-# Import Dataset  
-train_dataset = KTHDataset(csv_file)
-#valid_dataset = DigineticaDataset(valid_data)
+train_pkl = f"datasets/train_data_{seq_len}.pkl"
+valid_pkl = f"datasets/valid_data_{seq_len}.pkl"
+node_info_pkl = f"datasets/node_info_{seq_len}.pkl"
+
+# Import Dataset
+with open(train_pkl, "rb") as f:
+        train_data = pickle.load(f)
+    
+with open(valid_pkl, "rb") as f:
+    valid_data = pickle.load(f)
+
+with open(node_info_pkl, "rb") as f:
+    node_info = pickle.load(f)
+
+train_dataset = KTHDataset(train_data, node_info, seq_len=seq_len)
+valid_dataset = KTHDataset(valid_data, node_info, seq_len=seq_len)
+
 
 train_loader = torch.utils.data.DataLoader(train_dataset,
                                            batch_size=cfg.batchSize,
@@ -34,14 +42,7 @@ valid_loader = torch.utils.data.DataLoader(train_dataset,
                                            shuffle=False,
                                            collate_fn=collate_fn)
 
-n_node = 1500 #len(train_dataset.nodes)
-print("n_node: ", n_node)
-"""
-if cfg.dataset == 'diginetica':
-    n_node = 43098 # number of items
-else:
-    NotImplementedError(f"Dataset {cfg.dataset} not implemented")
-"""
+n_node = len(node_info["total_node"])
 
 # Import Model
 model = SessionGraph(cfg, n_node+2).to(device)
