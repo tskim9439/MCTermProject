@@ -80,6 +80,7 @@ class KTHDataset(Dataset):
         # 랜덤하게 시작 인덱스 선택
         start_idx = random.randint(0, len(line) - self.seq_len)
         line = line[start_idx:start_idx + self.seq_len]
+        #line = line[:self.seq_len]
         
         session = np.array(line[:-1])
         session = torch.from_numpy(session).long()
