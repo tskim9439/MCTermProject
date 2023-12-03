@@ -10,6 +10,30 @@ import networkx as nx
 import numpy as np
 
 
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+
+    def __init__(self, fmt=':f', start_counting_on_batch=0):
+        self.fmt = fmt
+        self.reset(start_counting_on_batch)
+
+    def reset(self, start_counting_on_batch=0):
+        self.count = start_counting_on_batch
+        self.sum = 0
+        self.avg = 0
+        self.val = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        if self.count != 0:
+            self.avg = self.sum / self.count
+
+    def __str__(self):
+        fmtstr = '{name} {count} {val' + self.fmt + '} ({avg' + self.fmt + '})'
+        return fmtstr.format(**self.__dict__)
+
 def build_graph(train_data):
     graph = nx.DiGraph()
     for seq in train_data:
