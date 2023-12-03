@@ -1,0 +1,35 @@
+dataset : "diginetica"
+batchSize : 100
+epoch : 30
+patience : 10
+validation : True
+valid_portion : 0.1
+
+model :
+  name : "lstm" # ["SR-GNN", "LSTM"]
+  srgnn :
+    hiddenSize : 100
+    step : 3
+    lr : 0.001
+    lr_dc : 0.1
+    lr_dc_step : 3
+    l2 : 0.0001
+    nonhybrid : True
+
+  lstm :
+    hidden_size : 100
+    num_layers : 3
+    dropout : 0.0
+    lr : 0.001
+    lr_dc : 0.1
+    lr_dc_step : 3
+    l2 : 0.0001
+  
+  gru :
+    hidden_size : 100
+    num_layers : 3
+    dropout : 0.0
+    lr : 0.001
+    lr_dc : 0.1
+    lr_dc_step : 3
+    l2 : 0.0001
