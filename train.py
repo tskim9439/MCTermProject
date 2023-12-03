@@ -14,8 +14,8 @@ from models import get_model
 cfg_fp = "config.yaml"
 cfg = OmegaConf.load(cfg_fp)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-seq_len = 10
-csv_file = r'datasets\2014_01_preprocess_with_time.csv'
+seq_len = 6
+csv_file = r'datasets/2014_01_preprocess_with_time.csv'
 
 # Logging
 log_dir = f"./logs/{cfg.model.name}_{seq_len}"
@@ -74,7 +74,6 @@ for epoch in range(cfg.epoch):
         inputs = inputs.to(device)
         
         model.optimizer.zero_grad()
-        
         # Forward
         if cfg.model.name == "srgnn":
             hidden = model(items, A)
@@ -82,6 +81,10 @@ for epoch in range(cfg.epoch):
             seq_hidden = torch.stack([get(i) for i in torch.arange(len(alias_inputs)).long()])
             scores = model.compute_scores(seq_hidden, mask)
         elif cfg.model.name == "lstm":
+            scores = model(inputs)
+        elif cfg.model.name == "transformer":
+            # Transformer forward pass
+            # Assuming the transformer model takes 'inputs' as source and 'targets' as target
             scores = model(inputs)
         else:
             raise NotImplementedError
@@ -118,6 +121,10 @@ for epoch in range(cfg.epoch):
             seq_hidden = torch.stack([get(i) for i in torch.arange(len(alias_inputs)).long()])
             scores = model.compute_scores(seq_hidden, mask)
         elif cfg.model.name == "lstm":
+            scores = model(inputs)
+        elif cfg.model.name == "transformer":
+            # Transformer forward pass
+            # Assuming the transformer model takes 'inputs' as source and 'targets' as target
             scores = model(inputs)
         else:
             raise NotImplementedError
