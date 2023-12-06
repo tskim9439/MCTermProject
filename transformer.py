@@ -33,8 +33,21 @@ class Transformer(nn.Module):
         return nn.Parameter(pe, requires_grad=False)
 
     def forward(self, src):
+        # Assuming src shape is [batch_size, sequence_length], transpose it to [sequence_length, batch_size]
+        src = src.transpose(0, 1)  # Now src is [sequence_length, batch_size]
+
+        # Embedding and positional encoding
         src = self.embedding(src) * math.sqrt(self.d_model)
         src = src + self.positional_encoding[:src.size(0), :]
+
+        # Transformer encoder
         output = self.encoder(src)
-        output = self.decoder(output[-1])  # Assuming prediction based on the last state
-        return output
+
+        # Take the output corresponding to the last timestep of each sequence
+        # output[-1] shape will be [batch_size, d_model]
+        last_timestep_output = output[-1]
+
+        # Final classification scores
+        scores = self.decoder(last_timestep_output)  # Now scores shape will be [batch_size, num_classes]
+
+        return scores
