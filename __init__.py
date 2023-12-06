@@ -1,7 +1,7 @@
 from .lstm import LSTM
 from .gru import GRU
 from .srgnn import SessionGraph
-from .transformer import transformer
+from .transformer1204 import Transformer
 
 
 def get_model(cfg, num_classes):
@@ -17,8 +17,8 @@ def get_model(cfg, num_classes):
             num_classes=num_classes,
         )
     elif name == "transformer":
-        return transformer(
-            opt=cfg.model.gru,
+        return Transformer(
+            opt=cfg.model.transformer,
             num_classes=num_classes,
         )
     elif name == "srgnn":
