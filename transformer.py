@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
+import torch.optim as optim
 import math
 
-
 class Transformer(nn.Module):
-    def __init__(self, opt, num_classes, d_model=256, nhead=4, num_encoder_layers=3, dropout=0.1, max_len=5000):
+    def __init__(self, opt, num_classes, d_model=256, nhead=4, num_encoder_layers=3, dropout=0.1, max_len=5000, lr=0.001):
         super(Transformer, self).__init__()
 
         self.d_model = d_model
@@ -15,6 +15,9 @@ class Transformer(nn.Module):
         self.decoder = nn.Linear(d_model, num_classes)
 
         self._init_weights()
+        self.optimizer = optim.Adam(self.parameters(), lr=lr)
+        self.loss_function = nn.CrossEntropyLoss()
+
 
     def _init_weights(self):
         nn.init.xavier_uniform_(self.embedding.weight)
