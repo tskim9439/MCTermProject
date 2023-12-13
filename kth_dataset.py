@@ -160,3 +160,10 @@ if __name__ == "__main__":
         break
 
 # %%
+a = torch.Tensor([101, 102, 103])
+b = torch.Tensor([201])
+mask = torch.Tensor([True, True, True])
+r = collate_fn([(a, b, mask)])
+# %%
+r
+# %%

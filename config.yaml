@@ -1,4 +1,6 @@
-dataset : "diginetica"
+root_path : "./datasets/00.processed_csv_file_ssp/"
+seq_len : 15
+
 batchSize : 100
 epoch : 30
 patience : 10
@@ -6,18 +8,18 @@ validation : True
 valid_portion : 0.1
 
 model :
-  name : "lstm" # ["SR-GNN", "LSTM"]
+  name : "srgnn" # ["srgnn", "lstm", "gru"]
   srgnn :
-    hiddenSize : 100
+    hiddenSize : 256
     step : 3
     lr : 0.001
-    lr_dc : 0.1
-    lr_dc_step : 3
-    l2 : 0.0001
+    lr_dc : 0.9
+    lr_dc_step : 1
+    l2 : 0.999
     nonhybrid : True
 
   lstm :
-    hidden_size : 100
+    hidden_size : 256
     num_layers : 3
     dropout : 0.0
     lr : 0.001
@@ -26,7 +28,7 @@ model :
     l2 : 0.0001
   
   gru :
-    hidden_size : 100
+    hidden_size : 256
     num_layers : 3
     dropout : 0.0
     lr : 0.001

@@ -8,7 +8,6 @@ from torch.utils.data import Dataset, DataLoader, random_split
 from sklearn.model_selection import train_test_split
 
 
-
 def get_sequences_from_csv(csv_file_path):
     sequences = []
     with open(csv_file_path, "r") as f:
@@ -38,8 +37,6 @@ def filter_dataset(sequences, target_len=10):
     data = []
     for line in sequences:
         if len(line) >= target_len:
-            #start_idx = random.randint(0, len(line) - target_len)
-            #data.append(line[start_idx:start_idx + target_len])
             data.append(line)
     return data
 
@@ -64,11 +61,13 @@ class KTHDataset(Dataset):
     def __init__(self,
                  data,
                  node_info,
+                 split="train",
                  seq_len=10,):
         self.data = data
         self.node_info = node_info
         self.seq_len = seq_len
         self.nodes2idx = self.node_info["node2idx"]
+        self.split = split
     
     def __len__(self):
         return len(self.data)
@@ -78,9 +77,11 @@ class KTHDataset(Dataset):
         line = [self.nodes2idx[node] for node in line]
         
         # 랜덤하게 시작 인덱스 선택
-        start_idx = random.randint(0, len(line) - self.seq_len)
-        line = line[start_idx:start_idx + self.seq_len]
-        #line = line[:self.seq_len]
+        if self.split == "train":
+            start_idx = random.randint(0, len(line) - self.seq_len)
+            line = line[start_idx:start_idx + self.seq_len]
+        else:
+            line = line[:self.seq_len]
         
         session = np.array(line[:-1])
         session = torch.from_numpy(session).long()
@@ -181,9 +182,9 @@ def make_dataset_pkl(csv_file, seq_len=10, valid_ratio=0.2):
         
         if len(not_included_node) == 0:
             print("All nodes in validation dataset are included in train dataset.")
-            with open(f"train_data_{seq_len}.pkl", "wb") as f:
+            with open(f"./datasets/train_data_{seq_len}.pkl", "wb") as f:
                 pickle.dump(train_data, f)
-            with open(f"valid_data_{seq_len}.pkl", "wb") as f:
+            with open(f"./datasets/valid_data_{seq_len}.pkl", "wb") as f:
                 pickle.dump(valid_data, f)
 
             total_node = get_total_nodes(data)
@@ -194,7 +195,7 @@ def make_dataset_pkl(csv_file, seq_len=10, valid_ratio=0.2):
             node_info["idx2node"] = idx2node
             node_info["total_node"] = total_node
             
-            with open(f"node_info_{seq_len}.pkl", "wb") as f:
+            with open(f"datasets/node_info_{seq_len}.pkl", "wb") as f:
                 pickle.dump(node_info, f)
             
             break
@@ -204,13 +205,13 @@ def make_dataset_pkl(csv_file, seq_len=10, valid_ratio=0.2):
 if __name__ == "__main__":
     # Setting the seed
     set_seed()
-
+    seq_len = 6
     csv_file = r'/home/gtts/MCTermProject/datasets/2014_01_preprocess_with_time.csv'
-    make_dataset_pkl(csv_file, seq_len=6, valid_ratio=0.2)
+    make_dataset_pkl(csv_file, seq_len=seq_len, valid_ratio=0.2)
     
-    train_pkl = "datasets/train_data_10.pkl"
-    valid_pkl = "datasets/valid_data_10.pkl"
-    node_info_pkl = "datasets/node_info_10.pkl"
+    train_pkl = f"datasets/train_data_{seq_len}.pkl"
+    valid_pkl = f"datasets/valid_data_{seq_len}.pkl"
+    node_info_pkl = f"datasets/node_info_{seq_len}.pkl"
     
     with open(train_pkl, "rb") as f:
         train_data = pickle.load(f)
@@ -221,8 +222,21 @@ if __name__ == "__main__":
     with open(node_info_pkl, "rb") as f:
         node_info = pickle.load(f)
     
-    train_dataset = KTHDataset(train_data, node_info)
-    valid_dataset = KTHDataset(valid_data, node_info)
+    train_max_len = max([len(line) for line in train_data])
+    valid_max_len = max([len(line) for line in valid_data])
+    
+    train_avg_len = np.mean([len(line) for line in train_data])
+    valid_avg_len = np.mean([len(line) for line in valid_data])
+    
+    print(f"Number of train data: {len(train_data)}")
+    print(f"Number of valid data: {len(valid_data)}")
+    print("Max length of train data: ", train_max_len)
+    print("Max length of valid data: ", valid_max_len)
+    print("Average length of train data: ", train_avg_len)
+    print("Average length of valid data: ", valid_avg_len)
+    
+    train_dataset = KTHDataset(train_data, node_info, seq_len=seq_len)
+    valid_dataset = KTHDataset(valid_data, node_info, seq_len=seq_len)
     
     train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True, collate_fn=collate_fn)
     batch = next(iter(train_loader))
