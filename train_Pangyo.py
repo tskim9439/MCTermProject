@@ -8,7 +8,7 @@ from omegaconf import OmegaConf
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from utils import AverageMeter
-from data_pangyo import PangyoDataset, manual_split, get_sequences_from_directory, collate_fn, get_total_nodes
+from data_pangyo import PangyoDataset_Train, PangyoDataset_Valid, get_sequences_from_directory, collate_fn, get_total_nodes
 from models import get_model
 
 cfg_fp = "config.yaml"
@@ -22,7 +22,7 @@ log_dir = f"./logs/{cfg.model.name}_{seq_len}"
 os.makedirs(log_dir, exist_ok=True)
 
 # Set the seed and load data
-directory_path = 'C:/Users/HONGGU/.conda/MCterm/datasets/00.processed_csv_file_ssp/13sequence/'
+directory_path = f'C:/Users/HONGGU/.conda/MCterm/datasets/00.processed_csv_file_ssp/{seq_len}sequence/'
 random.seed(100)
 all_sequences = get_sequences_from_directory(directory_path)
 random.shuffle(all_sequences)
@@ -39,11 +39,13 @@ node_info = {
 n_node = len(total_nodes)  # The number of unique nodes
 
 # Split and load datasets
-train_sequences, valid_sequences = manual_split(all_sequences)
-train_dataset = PangyoDataset(train_sequences, node_info, seq_len=seq_len)
-valid_dataset = PangyoDataset(valid_sequences, node_info, seq_len=seq_len)
+split_point = int(len(all_sequences) * 0.8)
+train_sequences = all_sequences[:split_point]
+valid_sequences = all_sequences[split_point:]
 
-# print(valid_sequences)
+train_dataset = PangyoDataset_Train(train_sequences, node_info)
+valid_dataset = PangyoDataset_Valid(valid_sequences, node_info)
+print(valid_dataset)
 
 train_loader = DataLoader(train_dataset, batch_size=cfg.batchSize, shuffle=True, collate_fn=collate_fn)
 valid_loader = DataLoader(valid_dataset, batch_size=cfg.batchSize, shuffle=False, collate_fn=collate_fn)
@@ -107,7 +109,8 @@ for epoch in range(cfg.epoch):
         mask = mask.to(device)
         targets = targets.to(device)
         inputs = inputs.to(device)
-        
+        # print(items[0:])
+
         # Forward
         if cfg.model.name == "srgnn":
             hidden = model(items, A)
@@ -119,26 +122,6 @@ for epoch in range(cfg.epoch):
         else:
             raise NotImplementedError
         
-        # Calculate MRR
-        scores = scores.detach().cpu()
-        targets = targets.detach().cpu()
-
-        k = min(3, scores.size(1))  # Adjust 1 to the dimension of interest
-        sub_scores = scores.topk(k)[1]
-        # sub_scores = scores.topk(20)[1]
-        sub_scores = sub_scores.detach().cpu().numpy()
-        hit, mrr = [], []
-        for score, target, m in zip(sub_scores, targets, mask):
-            hit.append(np.isin(target - 1, score))
-            if len(np.where(score == target - 1)[0]) == 0:
-                mrr.append(0)
-            else:
-                mrr.append(1 / (np.where(score == target - 1)[0][0] + 1))
-        
-        hit = np.mean(hit) * 100
-        mrr = np.mean(mrr) * 100
-        
-        
         # Calculate Accuracies
         scores = scores.detach().cpu().numpy()
         predictions = np.argmax(scores, axis=1)
@@ -146,19 +129,12 @@ for epoch in range(cfg.epoch):
         acc = np.sum(predictions == targets) / len(targets)
         acc = acc * 100
         accuracy.append(acc)
-        tq.set_postfix(acc=acc,
-                       hit=hit,
-                       mrr=mrr)
-
-        hits.append(hit)
-        mrrs.append(mrr)
+        tq.set_postfix(acc=acc)
         
     print(f"Validation Results  [Epoch {epoch+1}/{cfg.epoch}]")
     print(f"Accuracy: {np.mean(accuracy)}")
-    print(f"Hit: {np.mean(hits)}")
-    print(f"MRR: {np.mean(mrrs)}")
     
-    log_line = f"{epoch+1},{np.mean(accuracy)},{np.mean(hits)},{np.mean(mrrs)}\n"
+    log_line = f"{epoch+1},{np.mean(accuracy)}\n"
     logs.append(log_line)
     val_accs.append(np.mean(accuracy))
 
