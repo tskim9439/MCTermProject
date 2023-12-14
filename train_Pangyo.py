@@ -8,9 +8,8 @@ from omegaconf import OmegaConf
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from utils import AverageMeter
-from data_pangyo import PangyoDataset, get_sequences_from_directory, collate_fn, get_total_nodes
+from data_pangyo import PangyoDataset, manual_split, get_sequences_from_directory, collate_fn, get_total_nodes
 from models import get_model
-from sklearn.model_selection import train_test_split
 
 cfg_fp = "config.yaml"
 cfg = OmegaConf.load(cfg_fp)
@@ -40,14 +39,14 @@ node_info = {
 n_node = len(total_nodes)  # The number of unique nodes
 
 # Split and load datasets
-train_sequences, valid_sequences = train_test_split(all_sequences, train_size=0.8, test_size=0.2, random_state=100)
+train_sequences, valid_sequences = manual_split(all_sequences)
 train_dataset = PangyoDataset(train_sequences, node_info, seq_len=seq_len)
 valid_dataset = PangyoDataset(valid_sequences, node_info, seq_len=seq_len)
 
 # print(valid_sequences)
 
 train_loader = DataLoader(train_dataset, batch_size=cfg.batchSize, shuffle=True, collate_fn=collate_fn)
-valid_loader = DataLoader(valid_dataset, batch_size=cfg.batchSize, shuffle=True, collate_fn=collate_fn)
+valid_loader = DataLoader(valid_dataset, batch_size=cfg.batchSize, shuffle=False, collate_fn=collate_fn)
 
 # Import Model
 model = get_model(cfg=cfg, num_classes=n_node + 2).to(device)
