@@ -63,8 +63,8 @@ def data_masks(all_usr_pois, item_tail):
     us_msks = [[1] * le + [0] * (len_max - le) for le in us_lens]
     return us_pois, us_msks, len_max
 
-class PangyoDataset(Dataset):
-    def __init__(self, data, node_info, seq_len=15):
+class PangyoDataset_Train(Dataset):
+    def __init__(self, data, node_info, seq_len=13):
         self.data = data
         self.node_info = node_info
         self.seq_len = seq_len
@@ -81,6 +81,34 @@ class PangyoDataset(Dataset):
         start_idx = random.randint(0, len(line) - self.seq_len)
         line = line[start_idx:start_idx + self.seq_len]
         #line = line[:self.seq_len]
+        
+        session = np.array(line[:-1])
+        session = torch.from_numpy(session).long()
+        label = np.array(line[-1])
+        label = torch.from_numpy(label).long()
+        
+        inputs = torch.zeros(self.seq_len).long()
+        inputs[:len(session)] = session
+        mask = torch.zeros(self.seq_len).bool()
+        mask[:len(session)] = True
+        return inputs, label, mask
+
+class PangyoDataset_Valid(Dataset):
+    def __init__(self, data, node_info, seq_len=15):
+        self.data = data
+        self.node_info = node_info
+        self.seq_len = seq_len
+        self.nodes2idx = self.node_info["node2idx"]
+    
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        line = self.data[idx]
+        line = [self.nodes2idx[node] for node in line]
+        
+        # 시작 인덱스 고정
+        line = line[:self.seq_len]
         
         session = np.array(line[:-1])
         session = torch.from_numpy(session).long()
@@ -136,16 +164,6 @@ def collate_fn(batch):
     
     return alias_inputs, A, items, mask, targets, inputs
 
-def manual_split(sequences, train_ratio=0.8, seed=100):
-    random.seed(seed)  # 고정된 시드 값으로 무작위성 보장
-    random.shuffle(sequences)  # 리스트 섞기
-
-    split_point = int(len(sequences) * train_ratio)  # 8:2 비율로 나누기
-    train_sequences = sequences[:split_point]
-    valid_sequences = sequences[split_point:]
-
-    return train_sequences, valid_sequences
-
 def get_total_nodes(sequences):
     nodes = set()
     for line in sequences:
@@ -154,9 +172,7 @@ def get_total_nodes(sequences):
    
 
 if __name__ == "__main__":
-    # Setting the seed
-    # set_seed(100)
-    directory_path = 'C:/Users/HONGGU/.conda/MCterm/datasets/00.processed_csv_file_ssp/15sequence/'
+    directory_path = 'C:/Users/HONGGU/.conda/MCterm/datasets/00.processed_csv_file_ssp/13sequence/'
     random.seed(500)
     all_sequences = get_sequences_from_directory(directory_path)
     random.shuffle(all_sequences)
@@ -173,14 +189,15 @@ if __name__ == "__main__":
     }
     
     # Splitting data into training and validation sets
-    train_sequences, valid_sequences = manual_split(all_sequences)
-    print(train_sequences)
+    split_point = int(len(all_sequences) * 0.8)
+    train_sequences = all_sequences[:split_point]
+    valid_sequences = all_sequences[split_point:]
+    # print(train_sequences)
     # print(valid_sequences)
 
     # Assuming you have a Dataset class to handle the sequences
-    # Replace 'YourDataset' with the name of your dataset class
-    train_dataset = PangyoDataset(train_sequences, node_info)
-    valid_dataset = PangyoDataset(valid_sequences, node_info)
+    train_dataset = PangyoDataset_Train(train_sequences, node_info)
+    valid_dataset = PangyoDataset_Valid(valid_sequences, node_info)
     # print(valid_dataset)
 
     # DataLoader setup for training and validation
