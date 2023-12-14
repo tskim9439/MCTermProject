@@ -1,14 +1,14 @@
 import os
 import numpy as np
-import pickle
+import random
 import torch
 import matplotlib.pyplot as plt
 
 from omegaconf import OmegaConf
 from tqdm import tqdm
-from torch.utils.data import Dataset, DataLoader
-from utils import Data, split_validation, AverageMeter
-from data_pangyo import PangyoDataset, set_seed, get_sequences_from_directory, collate_fn, get_total_nodes
+from torch.utils.data import DataLoader
+from utils import AverageMeter
+from data_pangyo import PangyoDataset, get_sequences_from_directory, collate_fn, get_total_nodes
 from models import get_model
 from sklearn.model_selection import train_test_split
 
@@ -23,9 +23,10 @@ log_dir = f"./logs/{cfg.model.name}_{seq_len}"
 os.makedirs(log_dir, exist_ok=True)
 
 # Set the seed and load data
-set_seed()
 directory_path = 'C:/Users/HONGGU/.conda/MCterm/datasets/00.processed_csv_file_ssp/13sequence/'
+random.seed(100)
 all_sequences = get_sequences_from_directory(directory_path)
+random.shuffle(all_sequences)
 
 # Create node_info and calculate n_node
 total_nodes = get_total_nodes(all_sequences)
@@ -43,8 +44,10 @@ train_sequences, valid_sequences = train_test_split(all_sequences, train_size=0.
 train_dataset = PangyoDataset(train_sequences, node_info, seq_len=seq_len)
 valid_dataset = PangyoDataset(valid_sequences, node_info, seq_len=seq_len)
 
+# print(valid_sequences)
+
 train_loader = DataLoader(train_dataset, batch_size=cfg.batchSize, shuffle=True, collate_fn=collate_fn)
-valid_loader = DataLoader(valid_dataset, batch_size=cfg.batchSize, shuffle=False, collate_fn=collate_fn)
+valid_loader = DataLoader(valid_dataset, batch_size=cfg.batchSize, shuffle=True, collate_fn=collate_fn)
 
 # Import Model
 model = get_model(cfg=cfg, num_classes=n_node + 2).to(device)
@@ -76,14 +79,8 @@ for epoch in range(cfg.epoch):
             get = lambda i: hidden[i][alias_inputs[i]]
             seq_hidden = torch.stack([get(i) for i in torch.arange(len(alias_inputs)).long()])
             scores = model.compute_scores(seq_hidden, mask)
-        elif cfg.model.name == "lstm":
+        elif cfg.model.name in ["lstm", "gru", "transformer"]:
             scores = model(inputs)
-        elif cfg.model.name == "transformer":
-            # Transformer forward pass
-            # Assuming the transformer model takes 'inputs' as source and 'targets' as target
-            scores = model(inputs)  # Transformer model forward pass
-            # print(f"Input shape: {inputs.shape}, Scores shape: {scores.shape}, Targets shape: {targets.shape}")
-
         else:
             raise NotImplementedError
 
@@ -118,11 +115,7 @@ for epoch in range(cfg.epoch):
             get = lambda i: hidden[i][alias_inputs[i]]
             seq_hidden = torch.stack([get(i) for i in torch.arange(len(alias_inputs)).long()])
             scores = model.compute_scores(seq_hidden, mask)
-        elif cfg.model.name == "lstm":
-            scores = model(inputs)
-        elif cfg.model.name == "transformer":
-            # Transformer forward pass
-            # Assuming the transformer model takes 'inputs' as source and 'targets' as target
+        elif cfg.model.name in ["lstm", "gru", "transformer"]:
             scores = model(inputs)
         else:
             raise NotImplementedError
