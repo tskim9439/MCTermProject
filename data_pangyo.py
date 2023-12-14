@@ -64,7 +64,7 @@ def data_masks(all_usr_pois, item_tail):
     return us_pois, us_msks, len_max
 
 class PangyoDataset(Dataset):
-    def __init__(self, data, node_info, seq_len=8):
+    def __init__(self, data, node_info, seq_len=15):
         self.data = data
         self.node_info = node_info
         self.seq_len = seq_len
@@ -136,11 +136,15 @@ def collate_fn(batch):
     
     return alias_inputs, A, items, mask, targets, inputs
 
-#시드 값 조정을 통해 다른 환경에서도 동일하게 shuffle된 데이터 사용
-def set_seed(seed_value = 1209):
-    np.random.seed(seed_value)
-    torch.manual_seed(seed_value)
-    torch.cuda.manual_seed_all(seed_value)
+def manual_split(sequences, train_ratio=0.8, seed=100):
+    random.seed(seed)  # 고정된 시드 값으로 무작위성 보장
+    random.shuffle(sequences)  # 리스트 섞기
+
+    split_point = int(len(sequences) * train_ratio)  # 8:2 비율로 나누기
+    train_sequences = sequences[:split_point]
+    valid_sequences = sequences[split_point:]
+
+    return train_sequences, valid_sequences
 
 def get_total_nodes(sequences):
     nodes = set()
@@ -151,9 +155,11 @@ def get_total_nodes(sequences):
 
 if __name__ == "__main__":
     # Setting the seed
-    set_seed()
-    directory_path = 'C:/Users/HONGGU/.conda/MCterm/datasets/00.processed_csv_file_ssp/5sequence/'
+    # set_seed(100)
+    directory_path = 'C:/Users/HONGGU/.conda/MCterm/datasets/00.processed_csv_file_ssp/15sequence/'
+    random.seed(500)
     all_sequences = get_sequences_from_directory(directory_path)
+    random.shuffle(all_sequences)
     # print(all_sequences)
 
     # Create node_info
@@ -167,15 +173,18 @@ if __name__ == "__main__":
     }
     
     # Splitting data into training and validation sets
-    train_sequences, valid_sequences = train_test_split(all_sequences, train_size=0.8, test_size=0.2, random_state=100)
+    train_sequences, valid_sequences = manual_split(all_sequences)
+    print(train_sequences)
+    # print(valid_sequences)
 
     # Assuming you have a Dataset class to handle the sequences
     # Replace 'YourDataset' with the name of your dataset class
     train_dataset = PangyoDataset(train_sequences, node_info)
     valid_dataset = PangyoDataset(valid_sequences, node_info)
+    # print(valid_dataset)
 
     # DataLoader setup for training and validation
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
     valid_loader = DataLoader(valid_dataset, batch_size=32)
-    batch = next(iter(train_loader))
-    print(batch)
+    batch = next(iter(valid_loader))
+    # print(batch)
