@@ -1,31 +1,67 @@
-dataset : "diginetica"
 batchSize : 100
-epoch : 30
-patience : 10
+epoch : 150
+hidden_size : 100
 validation : True
-valid_portion : 0.1
 
 model :
-  name : "lstm" # ["SR-GNN", "LSTM"]
+  name : "lstm_beta" # [srgnn, srgnn_gru, srgnn_lstmlayer, lstm, gru, srgnn_attn]
+  
   srgnn :
-    hiddenSize : 100
-    step : 3
+    hidden_size : 100    #최초 100 -> 256  1209 1715
+    batchSize : 100
+    step : 3            #최초 3 -> 1 -> 2 -> 5 (1209 1730 -> 1733 -> 1752)
     lr : 0.001
     lr_dc : 0.1
-    lr_dc_step : 3
+    lr_dc_step : 3      #최초 3 -> 5
     l2 : 0.0001
-    nonhybrid : True
+    nonhybrid : False
+  
+  srgnn_attn :
+    hidden_size : 128    #최초 100 -> 256  1209 1715
+    batchSize : 100
+    step : 1            #최초 3 -> 1 -> 2 -> 5 (1209 1730 -> 1733 -> 1752)
+    lr : 0.001
+    lr_dc : 0.1
+    lr_dc_step : 3      #최초 3 -> 5
+    l2 : 0.0001
+    nonhybrid : False
+    num_transformer_layers : 3
+    nhead : 4
+
+  srgnn_lstmlayer:
+    hidden_size: 100
+    batchSize: 100
+    step: 3
+    lr: 0.001
+    lr_dc: 0.1
+    lr_dc_step: 3
+    l2: 0.0001
+    nonhybrid : False
+
+  srgnn_gru:
+    hidden_size: 100
+    batchSize: 100
+    step: 5
+    lstm_hidden_size: 100
+    lr: 0.001
+    lr_dc: 0.1
+    lr_dc_step: 3   
+    l2: 0.0001
+    nonhybrid : False
 
   lstm :
-    hidden_size : 100
-    num_layers : 3
-    dropout : 0.0
     lr : 0.001
     lr_dc : 0.1
     lr_dc_step : 3
     l2 : 0.0001
   
   gru :
+    lr : 0.001
+    lr_dc : 0.1
+    lr_dc_step : 3
+    l2 : 0.0001
+
+  transformer :
     hidden_size : 100
     num_layers : 3
     dropout : 0.0
@@ -33,3 +69,23 @@ model :
     lr_dc : 0.1
     lr_dc_step : 3
     l2 : 0.0001
+
+  lstm_beta:
+    lr : 0.001
+    lr_dc : 0.1
+    lr_dc_step : 3
+    l2 : 0.0001
+    hidden_size : 100   #최초 100 -> 256  1209 1715
+    batchSize : 100
+    step : 3            #최초 3 -> 1 -> 2 -> 5 (1209 1730 -> 1733 -> 1752)
+    nonhybrid : False
+
+  gru_beta:
+    lr : 0.001
+    lr_dc : 0.1
+    lr_dc_step : 3
+    l2 : 0.0001
+    hidden_size : 100   #최초 100 -> 256  1209 1715
+    batchSize : 100
+    step : 3            #최초 3 -> 1 -> 2 -> 5 (1209 1730 -> 1733 -> 1752)
+    nonhybrid : False
