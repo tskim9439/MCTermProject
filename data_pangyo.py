@@ -1,10 +1,8 @@
 import csv
 import random
 import numpy as np
-import pickle
 import torch
-from torch.utils.data import Dataset, DataLoader, random_split
-from sklearn.model_selection import train_test_split
+from torch.utils.data import Dataset, DataLoader
 
 import os
 
@@ -40,15 +38,6 @@ def struct_dataset(sequences):
         data.append(seq)
     return data
 
-def filter_dataset(sequences, target_len=5):
-    data = []
-    for line in sequences:
-        if len(line) >= target_len:
-            #start_idx = random.randint(0, len(line) - target_len)
-            #data.append(line[start_idx:start_idx + target_len])
-            data.append(line)
-    return data
-
 def get_total_nodes(sequences):
     nodes = set()
     for line in sequences:
@@ -64,7 +53,7 @@ def data_masks(all_usr_pois, item_tail):
     return us_pois, us_msks, len_max
 
 class PangyoDataset_Train(Dataset):
-    def __init__(self, data, node_info, seq_len=13):
+    def __init__(self, data, node_info, seq_len=19):
         self.data = data
         self.node_info = node_info
         self.seq_len = seq_len
@@ -94,7 +83,7 @@ class PangyoDataset_Train(Dataset):
         return inputs, label, mask
 
 class PangyoDataset_Valid(Dataset):
-    def __init__(self, data, node_info, seq_len=15):
+    def __init__(self, data, node_info, seq_len=19):
         self.data = data
         self.node_info = node_info
         self.seq_len = seq_len
@@ -180,6 +169,7 @@ if __name__ == "__main__":
 
     # Create node_info
     total_nodes = get_total_nodes(all_sequences)
+    total_nodes.sort()
     node2idx = {node: idx for idx, node in enumerate(total_nodes)}
     idx2node = {idx: node for node, idx in node2idx.items()}
     node_info = {
