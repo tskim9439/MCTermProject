@@ -14,7 +14,7 @@ from models import get_model
 cfg_fp = "config.yaml"
 cfg = OmegaConf.load(cfg_fp)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-seq_len = 13
+seq_len = 19
 
 # Logging
 # Configuration and initialization
@@ -23,12 +23,13 @@ os.makedirs(log_dir, exist_ok=True)
 
 # Set the seed and load data
 directory_path = f'C:/Users/HONGGU/.conda/MCterm/datasets/00.processed_csv_file_ssp/{seq_len}sequence/'
-random.seed(100)
+random.seed(500)
 all_sequences = get_sequences_from_directory(directory_path)
 random.shuffle(all_sequences)
 
 # Create node_info and calculate n_node
 total_nodes = get_total_nodes(all_sequences)
+total_nodes.sort()
 node2idx = {node: idx for idx, node in enumerate(total_nodes)}
 idx2node = {idx: node for node, idx in node2idx.items()}
 node_info = {
@@ -45,23 +46,28 @@ valid_sequences = all_sequences[split_point:]
 
 train_dataset = PangyoDataset_Train(train_sequences, node_info)
 valid_dataset = PangyoDataset_Valid(valid_sequences, node_info)
-print(valid_dataset)
 
 train_loader = DataLoader(train_dataset, batch_size=cfg.batchSize, shuffle=True, collate_fn=collate_fn)
 valid_loader = DataLoader(valid_dataset, batch_size=cfg.batchSize, shuffle=False, collate_fn=collate_fn)
 
 # Import Model
+# model = get_model(cfg=cfg, num_classes=n_node).to(device)
 model = get_model(cfg=cfg, num_classes=n_node + 2).to(device)
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+num_parameters = count_parameters(model)
+print(f"Number of parameters in the model: {num_parameters}")
 
 # Train Model
 # Run training loop
-logs = ["Epoch,Loss,ACC,HITS,HRR\n"]
+logs = ["Epoch,Loss,ACC\n"]
 val_accs = []
 train_losses = []
 best_acc = 0
 for epoch in range(cfg.epoch):
     train_loss_meter = AverageMeter()
-    
     tq = tqdm(train_loader, desc=f"Training [Epoch {epoch+1}/{cfg.epoch}]")
     model.train()
     for i, batch in enumerate(tq):
@@ -75,13 +81,19 @@ for epoch in range(cfg.epoch):
         
         model.optimizer.zero_grad()
         # Forward
-        if cfg.model.name == "srgnn":
+        # gnn 후 lstm일 때
+        if cfg.model.name in ["srgnn"]:
             hidden = model(items, A)
             get = lambda i: hidden[i][alias_inputs[i]]
             seq_hidden = torch.stack([get(i) for i in torch.arange(len(alias_inputs)).long()])
             scores = model.compute_scores(seq_hidden, mask)
+
         elif cfg.model.name in ["lstm", "gru", "transformer"]:
             scores = model(inputs)
+
+        elif cfg.model.name in ["lstm_beta", "gru_beta","transformer_beta"]:
+            scores = model(inputs, items, A)
+
         else:
             raise NotImplementedError
 
@@ -99,7 +111,6 @@ for epoch in range(cfg.epoch):
     tq = tqdm(valid_loader, desc=f"Validation [Epoch {epoch+1}/{cfg.epoch}]")
     model.eval()
     accuracy = []
-    hits, mrrs = [], []
     
     for i, batch in enumerate(tq):
         alias_inputs, A, items, mask, targets, inputs = batch
@@ -112,13 +123,18 @@ for epoch in range(cfg.epoch):
         # print(items[0:])
 
         # Forward
-        if cfg.model.name == "srgnn":
+        if cfg.model.name in ["srgnn"]:
             hidden = model(items, A)
             get = lambda i: hidden[i][alias_inputs[i]]
             seq_hidden = torch.stack([get(i) for i in torch.arange(len(alias_inputs)).long()])
             scores = model.compute_scores(seq_hidden, mask)
+
         elif cfg.model.name in ["lstm", "gru", "transformer"]:
             scores = model(inputs)
+
+        elif cfg.model.name in ["lstm_beta", "gru_beta", "transformer_beta"]:
+            scores = model(inputs, items, A)
+
         else:
             raise NotImplementedError
         
