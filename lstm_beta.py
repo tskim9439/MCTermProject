@@ -5,7 +5,7 @@ from torch.nn import Module, Parameter
 import torch.nn.functional as F
 
 class LSTM_fusion(nn.Module):
-    def __init__(self, opt, n_node, num_classes, num_layers=3, dropout=0.0):
+    def __init__(self, opt, n_node, num_classes, num_layers=3, dropout=0.0, max_input_dim=200):
         super(LSTM_fusion, self).__init__()
         self.num_layers = num_layers
         self.hidden_size = opt.hidden_size
@@ -28,7 +28,9 @@ class LSTM_fusion(nn.Module):
         self.loss_function = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.Adam(self.parameters(), lr=opt.lr, weight_decay=opt.l2)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=opt.lr_dc_step, gamma=opt.lr_dc)
-        
+        self.max_input_dim = max_input_dim
+        self.transformed_linear = nn.Linear(max_input_dim, 14)
+
     def reset_parameters(self):
         stdv = 1.0 / math.sqrt(self.hidden_size)
         for weight in self.parameters():
@@ -63,13 +65,22 @@ class LSTM_fusion(nn.Module):
         hidden = self.gnn(A, hidden)
         gnn_output_adjusted = self.dim_matcher(hidden)
 
-        # Transform from 9*14 to 14
-        flattened = gnn_output_adjusted.flatten(start_dim=1)  # Flatten to [100, 9*14]
-        transformed = nn.Linear(flattened.shape[1],14).to(torch.device("cuda"))
-        # self.trans_linear_layer(flattened)
-        out = self.fc(out[:, -1, :])
+        # Flatten to [100, 9*14] or similar
+        flattened = gnn_output_adjusted.flatten(start_dim=1)
 
-        return out+transformed(flattened)
+        # print("Flattened Tensor:", flattened)
+        # print("Shape of Flattened Tensor:", flattened.shape)
+
+        # 입력 차원을 최대 입력 차원에 맞추기
+        if flattened.shape[1] < self.max_input_dim:
+            padding = torch.zeros(flattened.size(0), self.max_input_dim - flattened.shape[1]).to(flattened.device)
+            flattened = torch.cat([flattened, padding], dim=1)
+
+        transformed_output = self.transformed_linear(flattened)
+
+        out = self.fc(out[:, -1, :]) + transformed_output
+
+        return out
     
 
 class GNN(Module):
